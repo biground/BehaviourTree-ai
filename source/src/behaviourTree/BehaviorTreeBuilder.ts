@@ -6,7 +6,7 @@ module behaviourTree {
      * 当叶子节点被添加时，装饰器会自动关闭。
      * 组合体必须调用endComposite来关闭它们。
      */
-    export class BehaviorTreeBuilder<T>{
+    export class BehaviorTreeBuilder<T> {
         private _context: T;
         /** 最后创建的节点 */
         private _currentNode: Behavior<T> | undefined;
@@ -25,8 +25,7 @@ module behaviourTree {
             let parent = ArrayExt.peek(this._parentNodeStack);
             if (parent instanceof Composite) {
                 (parent as Composite<T>).addChild(child);
-            }
-            else if (parent instanceof Decorator) {
+            } else if (parent instanceof Decorator) {
                 // 装饰者只有一个子节点，所以自动结束
                 (parent as Decorator<T>).child = child;
                 this.endDecorator();
@@ -49,45 +48,75 @@ module behaviourTree {
         }
 
         public action(func: (t: T) => TaskStatus): BehaviorTreeBuilder<T> {
-            Assert.isFalse(this._parentNodeStack.length == 0, "无法创建无嵌套的动作节点, 它必须是一个叶节点");
+            Assert.isFalse(
+                this._parentNodeStack.length == 0,
+                '无法创建无嵌套的动作节点, 它必须是一个叶节点',
+            );
             return this.setChildOnParent(new ExecuteAction<T>(func));
         }
 
         public actionR(func: (t: T) => boolean): BehaviorTreeBuilder<T> {
-            return this.action(t => func(t) ? TaskStatus.Success : TaskStatus.Failure);
+            return this.action(t =>
+                func(t) ? TaskStatus.Success : TaskStatus.Failure,
+            );
         }
 
         public conditional(func: (t: T) => TaskStatus): BehaviorTreeBuilder<T> {
-            Assert.isFalse(this._parentNodeStack.length == 0, "无法创建无嵌套的条件节点, 它必须是一个叶节点");
+            Assert.isFalse(
+                this._parentNodeStack.length == 0,
+                '无法创建无嵌套的条件节点, 它必须是一个叶节点',
+            );
             return this.setChildOnParent(new ExecuteActionConditional<T>(func));
         }
 
         public conditionalR(func: (t: T) => boolean): BehaviorTreeBuilder<T> {
-            return this.conditional(t => func(t) ? TaskStatus.Success : TaskStatus.Failure);
+            return this.conditional(t =>
+                func(t) ? TaskStatus.Success : TaskStatus.Failure,
+            );
         }
 
         public logAction(text: string): BehaviorTreeBuilder<T> {
-            Assert.isFalse(this._parentNodeStack.length == 0, "无法创建无嵌套的动作节点, 它必须是一个叶节点");
+            Assert.isFalse(
+                this._parentNodeStack.length == 0,
+                '无法创建无嵌套的动作节点, 它必须是一个叶节点',
+            );
             return this.setChildOnParent(new LogAction<T>(text));
         }
 
         public waitAction(waitTime: number): BehaviorTreeBuilder<T> {
-            Assert.isFalse(this._parentNodeStack.length == 0, "无法创建无嵌套的动作节点, 它必须是一个叶节点");
+            Assert.isFalse(
+                this._parentNodeStack.length == 0,
+                '无法创建无嵌套的动作节点, 它必须是一个叶节点',
+            );
             return this.setChildOnParent(new WaitAciton<T>(waitTime));
         }
 
         public subTree(subTree: BehaviorTree<T>): BehaviorTreeBuilder<T> {
-            Assert.isFalse(this._parentNodeStack.length == 0, "无法创建无嵌套的动作节点, 它必须是一个叶节点");
+            Assert.isFalse(
+                this._parentNodeStack.length == 0,
+                '无法创建无嵌套的动作节点, 它必须是一个叶节点',
+            );
             return this.setChildOnParent(new BehaviorTreeReference<T>(subTree));
         }
 
-        public conditionalDecorator(func: (t: T) => TaskStatus, shouldReevaluate: boolean = true): BehaviorTreeBuilder<T> {
+        public conditionalDecorator(
+            func: (t: T) => TaskStatus,
+            shouldReevaluate: boolean = true,
+        ): BehaviorTreeBuilder<T> {
             let conditional = new ExecuteActionConditional<T>(func);
-            return this.pushParentNode(new ConditionalDecorator<T>(conditional, shouldReevaluate));
+            return this.pushParentNode(
+                new ConditionalDecorator<T>(conditional, shouldReevaluate),
+            );
         }
 
-        public conditionalDecoratorR(func: (t: T) => boolean, shouldReevaluate: boolean = true): BehaviorTreeBuilder<T> {
-            return this.conditionalDecorator(t => func(t) ? TaskStatus.Success : TaskStatus.Failure, shouldReevaluate);
+        public conditionalDecoratorR(
+            func: (t: T) => boolean,
+            shouldReevaluate: boolean = true,
+        ): BehaviorTreeBuilder<T> {
+            return this.conditionalDecorator(
+                t => (func(t) ? TaskStatus.Success : TaskStatus.Failure),
+                shouldReevaluate,
+            );
         }
 
         public alwaysFail(): BehaviorTreeBuilder<T> {
@@ -122,7 +151,9 @@ module behaviourTree {
             return this.pushParentNode(new ParallelSelector<T>());
         }
 
-        public selector(abortType: AbortTypes = AbortTypes.None): BehaviorTreeBuilder<T> {
+        public selector(
+            abortType: AbortTypes = AbortTypes.None,
+        ): BehaviorTreeBuilder<T> {
             return this.pushParentNode(new Selector<T>(abortType));
         }
 
@@ -139,17 +170,23 @@ module behaviourTree {
         }
 
         public endComposite(): BehaviorTreeBuilder<T> {
-            Assert.isTrue(ArrayExt.peek(this._parentNodeStack) instanceof Composite, "尝试结束复合器，但顶部节点是装饰器");
+            Assert.isTrue(
+                ArrayExt.peek(this._parentNodeStack) instanceof Composite,
+                '尝试结束复合器，但顶部节点是装饰器',
+            );
             this._currentNode = ArrayExt.pop(this._parentNodeStack);
             return this;
         }
 
         public build(updatePeriod: number = 0.2): BehaviorTree<T> {
             // Assert.isNotNull(this._currentNode, "无法创建零节点的行为树");
-            if (!this._currentNode)
-                throw new Error('无法创建零节点的行为树');
+            if (!this._currentNode) throw new Error('无法创建零节点的行为树');
 
-            return new BehaviorTree<T>(this._context, this._currentNode, updatePeriod);
+            return new BehaviorTree<T>(
+                this._context,
+                this._currentNode,
+                updatePeriod,
+            );
         }
     }
 }

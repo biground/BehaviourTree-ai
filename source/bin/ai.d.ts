@@ -443,8 +443,9 @@ declare module fsm {
         private _stateCache;
         private _stateMethods;
         private _currentState;
-        protected currentState: TEnum;
-        protected initialState: TEnum;
+        protected get currentState(): TEnum;
+        protected set currentState(value: TEnum);
+        protected set initialState(value: TEnum);
         constructor(stateType: any);
         private configureAndCacheState;
         update(): void;
@@ -492,7 +493,7 @@ declare module fsm {
 declare module fsm {
     class StateMachine<T> {
         onStateChanged: () => void;
-        readonly currentState: State<T>;
+        get currentState(): State<T>;
         previousState: State<T>;
         elapsedTimeInState: number;
         protected _currentState: State<T>;
